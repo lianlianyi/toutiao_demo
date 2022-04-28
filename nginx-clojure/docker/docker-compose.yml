@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  nginx_clojure:
+    image: lianlianyi/nginx_clojure:0.5.3_jdk8
+    networks:
+      - npc_net
+    volumes:
+      - ~/github/my_nginx_clojure/target/my_nginx_clojure-1.0-SNAPSHOT.jar:/nginx/jars/demo.jar
+      - ~/.m2/repository/cn/hutool/hutool-all/5.8.0.M3/hutool-all-5.8.0.M3.jar:/nginx/jars/hutool-all-5.8.0.M3.jar
+      - ./etc/nginx_clojure/nginx.conf:/nginx/conf/nginx.conf
+    ports:
+      - 80:8080

@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: rabbitmq-delayed
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: /
+    publisher-returns: true #开启发送失败返回
+    publisher-confirm-type: correlated #配置确认回调
+    listener:
+      simple:
+        acknowledge-mode: auto #开启ack
+        concurrency: 5 #指定最小的消费者数量.
+        max-concurrency: 10 #指定最大的消费者数量.
+        prefetch: 1 # 最多一次消费多少条数据 -限流
+      direct:
+        acknowledge-mode: auto
