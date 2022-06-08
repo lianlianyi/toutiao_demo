@@ -5,10 +5,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.thread.ThreadUtil;
 import com.rabbitmq.client.Channel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.Queue;
@@ -39,9 +36,26 @@ public class DirectQueue {
     private static final String DELAYED_ROUTING_KEY = "demo.delayed.routing_key_toutiao_demo";
     private final RabbitTemplate rabbitTemplate;
 
+    @SneakyThrows
     @RabbitListener(queuesToDeclare = @Queue(DELAYED_QUEUE_NAME))
     public void receive(@Payload MsgDemo msgDemo, Message message, Channel channel) {
-        log.info("调用消费者时间:{},MSG:{}¨", DateUtil.formatDateTime(new Date()),msgDemo);
+        try {
+            Console.log("收到消息：{},时间:{}", msgDemo,DateUtil.formatDateTime(new Date()));
+            //TODO 具体业务
+            int a = 1 / 0;
+            //basicAck：表示成功确认，使用此回执方法后，消息会被rabbitmq broker 删除。
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+        }  catch (Exception e) {
+            if (message.getMessageProperties().getRedelivered()) {
+                Console.error("消息已重复处理失败,拒绝再次接收...");
+                //basicReject：拒绝消息，与basicNack区别在于不能进行批量操作，其他用法很相似。
+                channel.basicReject(message.getMessageProperties().getDeliveryTag(), false); // 拒绝消息
+            } else {
+                Console.error("消息即将再次返回队列处理...");
+                //basicNack ：表示失败确认，一般在消费消息业务异常时用到此方法，可以将消息重新投递入队列。
+                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+            }
+        }
     }
 
     @Data
