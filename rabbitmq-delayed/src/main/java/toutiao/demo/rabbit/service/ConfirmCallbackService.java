@@ -1,13 +1,15 @@
 package toutiao.demo.rabbit.service;
 
-import cn.hutool.core.lang.Console;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 生产端确认
  */
+@Slf4j
 @Component
 public class ConfirmCallbackService implements RabbitTemplate.ConfirmCallback {
     /**
@@ -18,10 +20,10 @@ public class ConfirmCallbackService implements RabbitTemplate.ConfirmCallback {
     @Override
     public void confirm(CorrelationData correlationData, boolean ack, String cause) {
         if (!ack) {
-            Console.error("消息发送异常!");
-        } else {
-            // warn 延迟队列返回null
-            Console.log("发送者爸爸已经收到确认，correlationData={} ,ack={}, cause={}", correlationData, ack, cause);
+            log.error("消息发送异常!");
+            return;
         }
+        log.info("消息投递成功，correlationData={} ,ack={}, cause={}", correlationData.getId(), ack, cause);
+        // todo 进行消息记录的数据库更新
     }
 }

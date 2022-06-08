@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.lang.Console;
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.IdUtil;
 import com.rabbitmq.client.Channel;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +32,9 @@ import java.util.HashMap;
 @Configuration
 @RequiredArgsConstructor
 public class DirectQueue {
-    private static final String DELAYED_EXCHANGE_NAME = "demo.delayed.exchange_toutiao_demo";
-    private static final String DELAYED_QUEUE_NAME = "demo.delayed.queue_toutiao_demo";
-    private static final String DELAYED_ROUTING_KEY = "demo.delayed.routing_key_toutiao_demo";
+    private static final String DELAYED_EXCHANGE_NAME = "delayed.demo.exchange_toutiao_demo";
+    private static final String DELAYED_QUEUE_NAME = "delayed.demo.queue_toutiao_demo";
+    private static final String DELAYED_ROUTING_KEY = "delayed.demo.routing_key_toutiao_demo";
     private final RabbitTemplate rabbitTemplate;
 
     @SneakyThrows
@@ -95,11 +96,14 @@ public class DirectQueue {
     }
 
     public void sendMq(MsgDemo msg,DateUnit unit,int timeout) {
+        //绑定一个id,这样ConfirmCallback回调就能收到
+        CorrelationData correlationData = new CorrelationData(IdUtil.fastUUID());
+
         rabbitTemplate.convertAndSend(DELAYED_EXCHANGE_NAME, DELAYED_ROUTING_KEY, msg, correlationDate -> {
             //延迟3秒
             correlationDate.getMessageProperties().setDelay((int) (unit.getMillis() * timeout));
             return correlationDate;
-        });
+        },correlationData);
         log.info("生产者发送时间:{},msg:{}", DateUtil.formatDateTime(new Date()),msg);
     }
 
