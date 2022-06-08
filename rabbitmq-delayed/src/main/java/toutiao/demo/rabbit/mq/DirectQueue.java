@@ -1,23 +1,27 @@
 package toutiao.demo.rabbit.mq;
 
+import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.lang.Console;
+import cn.hutool.core.thread.ThreadUtil;
 import com.rabbitmq.client.Channel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.CustomExchange;
-import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Component;
+import toutiao.demo.rabbit.service.ConfirmCallbackService;
+import toutiao.demo.rabbit.service.ReturnCallbackService;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -34,7 +38,6 @@ public class DirectQueue {
     private static final String DELAYED_QUEUE_NAME = "demo.delayed.queue_toutiao_demo";
     private static final String DELAYED_ROUTING_KEY = "demo.delayed.routing_key_toutiao_demo";
     private final RabbitTemplate rabbitTemplate;
-
 
     @RabbitListener(queuesToDeclare = @Queue(DELAYED_QUEUE_NAME))
     public void receive(@Payload MsgDemo msgDemo, Message message, Channel channel) {
@@ -77,10 +80,10 @@ public class DirectQueue {
         return BindingBuilder.bind(queue).to(customExchange).with(DELAYED_ROUTING_KEY).noargs();
     }
 
-    public void sendMq(MsgDemo msg) {
+    public void sendMq(MsgDemo msg,DateUnit unit,int timeout) {
         rabbitTemplate.convertAndSend(DELAYED_EXCHANGE_NAME, DELAYED_ROUTING_KEY, msg, correlationDate -> {
             //延迟3秒
-            correlationDate.getMessageProperties().setDelay(1000 * 3);
+            correlationDate.getMessageProperties().setDelay((int) (unit.getMillis() * timeout));
             return correlationDate;
         });
         log.info("生产者发送时间:{},msg:{}", DateUtil.formatDateTime(new Date()),msg);
